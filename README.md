@@ -42,6 +42,11 @@ http://localhost:3000 접속.
    npm run db:seed        # 스프린트 챌린지 시드
    ```
 4. (권장) 각 테이블에 RLS 정책 추가 — `user_id = auth.uid()` 기준
+5. Auth 설정 (Supabase 대시보드 → Authentication)
+   - URL Configuration → Redirect URLs 에 `http://localhost:3000/**`, 배포 도메인 추가
+   - Email Templates → "Confirm signup" 링크를
+     `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email` 로 수정
+   - 로컬에서 확인 메일 없이 테스트하려면 "Confirm email" 옵션을 잠시 꺼도 됨
 
 ### DB 스크립트
 
@@ -57,9 +62,9 @@ http://localhost:3000 접속.
 ## 진행 상황
 
 - [x] 1. Next.js 스캐폴딩 (TS + Tailwind + App Router)
-- [~] 2. Supabase 클라이언트 코드 (`src/lib/supabase/*`, `src/proxy.ts`) — 실제 프로젝트 값 입력은 사용자 몫
-- [~] 3. Prisma 스키마 작성 완료 — 마이그레이션은 DB 연결 후
-- [ ] 4. 인증
+- [x] 2. Supabase 클라이언트 코드 (`src/lib/supabase/*`, `src/proxy.ts`) + 실제 프로젝트 연동
+- [x] 3. Prisma 스키마 + `init` 마이그레이션 적용 + 시드
+- [x] 4. 인증 (이메일/비밀번호, 로그인·가입·로그아웃, 보호 라우트)
 - [ ] 5. 문제은행 CRUD + 시드
 - [ ] 6. SRS 복습 + 퀴즈 엔진
 - [ ] 7. 브라우저 TTS 리스닝 재생
