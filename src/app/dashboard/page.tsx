@@ -1,11 +1,17 @@
+import Link from "next/link";
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
+import { isAdmin } from "@/lib/admin";
 import { SignOutButton } from "@/components/sign-out-button";
 
 export const metadata: Metadata = { title: "대시보드 · 작심삼토" };
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: PageProps<"/dashboard">) {
   const user = await requireUser();
+  const admin = await isAdmin();
+  const { error } = await searchParams;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-10">
@@ -16,8 +22,24 @@ export default async function DashboardPage() {
             {user.email}
           </h1>
         </div>
-        <SignOutButton />
+        <div className="flex items-center gap-3">
+          {admin && (
+            <Link
+              href="/admin"
+              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            >
+              관리자
+            </Link>
+          )}
+          <SignOutButton />
+        </div>
       </header>
+
+      {error === "forbidden" && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700 dark:bg-amber-950/50 dark:text-amber-300">
+          관리자 권한이 필요한 페이지예요.
+        </p>
+      )}
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">

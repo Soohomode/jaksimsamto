@@ -1,13 +1,9 @@
 import { PrismaClient } from "@prisma/client";
+import { seedQuestions } from "./seed-data/questions";
 
 const prisma = new PrismaClient();
 
-/**
- * 시드 데이터.
- * - 스프린트 챌린지(정적 설정성 데이터)는 여기서 생성한다.
- * - 문제은행(Question) 시드는 6단계에서 추가 예정. (TODO)
- */
-async function main() {
+async function seedChallenges() {
   const challenges = [
     {
       title: "3일 단어 스프린트",
@@ -50,8 +46,43 @@ async function main() {
       create: c,
     });
   }
-
   console.log(`Seeded ${challenges.length} sprint challenges.`);
+}
+
+async function seedQuestionBank() {
+  for (const q of seedQuestions) {
+    const data = {
+      part: q.part,
+      type: q.type,
+      content: q.content,
+      choices: q.choices,
+      answer: q.answer,
+      audioScript: q.audioScript ?? null,
+      explanation: q.explanation ?? null,
+      difficulty: q.difficulty ?? 3,
+      tags: q.tags ?? [],
+      isPublished: true,
+      passageGroup: q.passageGroup ?? null,
+      passageOrder: q.passageOrder ?? null,
+    };
+
+    const existing = await prisma.question.findFirst({
+      where: { part: q.part, content: q.content },
+      select: { id: true },
+    });
+
+    if (existing) {
+      await prisma.question.update({ where: { id: existing.id }, data });
+    } else {
+      await prisma.question.create({ data });
+    }
+  }
+  console.log(`Seeded ${seedQuestions.length} sample questions.`);
+}
+
+async function main() {
+  await seedChallenges();
+  await seedQuestionBank();
 }
 
 main()

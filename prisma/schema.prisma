@@ -24,6 +24,13 @@ model Question {
   explanation  String? // 해설 (선택)
   difficulty   Int      @default(3) // 1~5
   tags         String[] @default([])
+  isPublished  Boolean  @default(true) @map("is_published")
+
+  /// Part 3·4·6·7처럼 하나의 지문/음성에 여러 문항이 딸린 경우 묶는 키.
+  /// 같은 passageGroup을 가진 문항은 content(지문)·audioScript를 공유한다.
+  passageGroup String?  @map("passage_group")
+  passageOrder Int?     @map("passage_order") // 그룹 내 문항 순서 (1부터)
+
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -32,6 +39,8 @@ model Question {
 
   @@index([part])
   @@index([type])
+  @@index([passageGroup])
+  @@index([isPublished, part])
   @@map("questions")
 }
 

@@ -47,6 +47,8 @@ http://localhost:3000 접속.
    - Email Templates → "Confirm signup" 링크를
      `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email` 로 수정
    - 로컬에서 확인 메일 없이 테스트하려면 "Confirm email" 옵션을 잠시 꺼도 됨
+6. 관리자 접근: `.env.local`의 `ADMIN_EMAILS`에 본인 가입 이메일을 넣으면
+   로그인 후 대시보드에 "관리자" 버튼이 뜨고 `/admin/questions`에서 문제를 관리할 수 있음
 
 ### DB 스크립트
 
@@ -65,7 +67,7 @@ http://localhost:3000 접속.
 - [x] 2. Supabase 클라이언트 코드 (`src/lib/supabase/*`, `src/proxy.ts`) + 실제 프로젝트 연동
 - [x] 3. Prisma 스키마 + `init` 마이그레이션 적용 + 시드
 - [x] 4. 인증 (이메일/비밀번호, 로그인·가입·로그아웃, 보호 라우트)
-- [ ] 5. 문제은행 CRUD + 시드
+- [x] 5. 문제은행 CRUD (`/admin/questions`) + 샘플 문제 19개 시드
 - [ ] 6. SRS 복습 + 퀴즈 엔진
 - [ ] 7. 브라우저 TTS 리스닝 재생
 - [ ] 8. 모의고사 모드 + 환산 점수(추정치)
