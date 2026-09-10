@@ -3,6 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { getSprintView, listCompletedSprints, MISSION_LABEL } from "@/lib/sprint";
 import { getStreak } from "@/lib/streak";
 import { SprintPanel } from "@/components/sprint-panel";
+import { PushToggle } from "@/components/push-toggle";
 
 export const metadata: Metadata = { title: "3일 스프린트 · 작심삼토" };
 
@@ -48,6 +49,8 @@ export default async function ChallengePage() {
       </div>
 
       <SprintPanel current={current} next={next} streak={streak.current} />
+
+      <PushToggle />
 
       {completed.length > 0 && (
         <div>

@@ -49,6 +49,12 @@ http://localhost:3000 접속.
    - 로컬에서 확인 메일 없이 테스트하려면 "Confirm email" 옵션을 잠시 꺼도 됨
 6. 관리자 접근: `.env.local`의 `ADMIN_EMAILS`에 본인 가입 이메일을 넣으면
    로그인 후 대시보드에 "관리자" 버튼이 뜨고 `/admin/questions`에서 문제를 관리할 수 있음
+7. Web Push: `npx web-push generate-vapid-keys --json`으로 키 생성 →
+   `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` 채우기.
+   `CRON_SECRET`도 아무 값이나 설정. `/challenge`에서 "알림 켜기"로 구독.
+   스트릭 리마인더는 `GET /api/cron/streak-reminder` (헤더 `Authorization: Bearer $CRON_SECRET`),
+   Vercel Cron이 `vercel.json` 스케줄대로 매시 호출.
+   ※ iOS Safari는 홈 화면에 추가한 PWA 상태에서만 웹 푸시가 동작함.
 
 ### DB 스크립트
 
@@ -73,7 +79,7 @@ http://localhost:3000 접속.
 - [x] 8. 모의고사 모드 (`/mock`) + 근사 환산 점수(추정치 명시)
 - [x] 9. 진행도 대시보드 (정답률·활동·파트별·복습 숙련도·모의고사 추이)
 - [x] 10. 3일 스프린트 챌린지 (`/challenge`) + `user_streaks` 연속 기록
-- [ ] 11. Web Push 알림
+- [x] 11. Web Push 알림 (Service Worker + VAPID, 스트릭 리마인더 크론)
 - [ ] 12. CI + Vercel 배포
 
 자세한 브리프는 [CLAUDE.md](./CLAUDE.md) 참고.

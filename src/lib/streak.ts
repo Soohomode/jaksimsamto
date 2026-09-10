@@ -65,15 +65,21 @@ export async function touchStreak(userId: string): Promise<void> {
   const lastKey = dateColToKey(row.lastCompletedDate);
   if (lastKey === todayKey) return; // 오늘 이미 반영됨
 
-  const next =
-    lastKey === yesterdayKey ? row.currentStreak + 1 : 1;
+  const next = lastKey === yesterdayKey ? row.currentStreak + 1 : 1;
 
-  await prisma.userStreak.update({
-    where: { userId },
-    data: {
-      currentStreak: next,
-      longestStreak: Math.max(next, row.longestStreak),
-      lastCompletedDate: todayDate,
-    },
-  });
+  await prisma.$transaction([
+    prisma.userStreak.update({
+      where: { userId },
+      data: {
+        currentStreak: next,
+        longestStreak: Math.max(next, row.longestStreak),
+        lastCompletedDate: todayDate,
+      },
+    }),
+    // 오늘 활동했으니 리마인더 단계 초기화
+    prisma.pushSubscription.updateMany({
+      where: { userId, notifyStage: { gt: 0 } },
+      data: { notifyStage: 0 },
+    }),
+  ]);
 }
