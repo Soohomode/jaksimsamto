@@ -1,0 +1,149 @@
+// 작심삼토 데이터 모델
+// CLAUDE.md 4번 스키마 기준. 실제 유저(auth.users)는 Supabase Auth가 관리하며,
+// 여기서는 그 UUID를 참조만 한다 (Prisma가 auth 스키마를 소유하지 않음).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// LC Part 1~4 / RC Part 5~7 문제은행
+model Question {
+  id           String   @id @default(uuid()) @db.Uuid
+  part         Int // 1~7
+  type         String // 예: "photo", "qa", "conversation", "talk", "incomplete-sentence", "text-completion", "reading-comprehension"
+  content      String // 지문/질문 본문 (JSON 문자열 또는 마크다운)
+  choices      Json // ["(A) ...", "(B) ...", ...]
+  answer       String // 정답 키 예: "A"
+  audioScript  String?  @map("audio_script") // LC 대본 (TTS 재생용). RC는 null
+  explanation  String? // 해설 (선택)
+  difficulty   Int      @default(3) // 1~5
+  tags         String[] @default([])
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  reviewStates ReviewState[]
+  quizAttempts QuizAttempt[]
+
+  @@index([part])
+  @@index([type])
+  @@map("questions")
+}
+
+/// 단어/문법 SRS 복습 상태 (SM-2 계열)
+model ReviewState {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  questionId   String   @map("question_id") @db.Uuid
+  ease         Float    @default(2.5) // SM-2 easiness factor
+  intervalDays Int      @default(0) @map("interval_days")
+  repetitions  Int      @default(0)
+  lapses       Int      @default(0)
+  nextReviewAt DateTime @default(now()) @map("next_review_at")
+  lastReviewedAt DateTime? @map("last_reviewed_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId, nextReviewAt])
+  @@map("review_states")
+}
+
+/// 개별 문제 풀이 기록 (오답 노트 소스)
+model QuizAttempt {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  questionId String   @map("question_id") @db.Uuid
+  selected   String // 유저가 고른 선택지 키
+  isCorrect  Boolean  @map("is_correct")
+  elapsedMs  Int?     @map("elapsed_ms")
+  source     String   @default("practice") // "practice" | "mock" | "review"
+  attemptedAt DateTime @default(now()) @map("attempted_at")
+
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, attemptedAt])
+  @@index([userId, isCorrect])
+  @@map("quiz_attempts")
+}
+
+/// 모의고사 결과 + 근사 환산 점수 (UI에는 항상 "추정치"로 표기)
+model MockExamResult {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @map("user_id") @db.Uuid
+  lcRawScore     Int      @map("lc_raw_score") // 맞은 개수 0~100
+  rcRawScore     Int      @map("rc_raw_score") // 맞은 개수 0~100
+  lcEstimated    Int      @map("lc_estimated") // 환산 5~495
+  rcEstimated    Int      @map("rc_estimated") // 환산 5~495
+  estimatedScore Int      @map("estimated_score") // 합계 10~990 (추정)
+  durationSec    Int?     @map("duration_sec")
+  takenAt        DateTime @default(now()) @map("taken_at")
+
+  @@index([userId, takenAt])
+  @@map("mock_exam_results")
+}
+
+/// 3일 스프린트 챌린지 정의 (관리자/시드가 생성)
+model SprintChallenge {
+  id          String   @id @default(uuid()) @db.Uuid
+  title       String   @unique
+  description String?
+  dayRange    Int      @default(3) @map("day_range") // 스프린트 길이(일)
+  missionType String   @map("mission_type") // "vocab" | "mock" | "quiz" | "review"
+  targetCount Int      @map("target_count") // 목표 수량 (단어 30개 등)
+  orderIndex  Int      @default(0) @map("order_index")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  progresses UserSprintProgress[]
+
+  @@map("sprint_challenges")
+}
+
+/// 유저별 스프린트 진행 상황
+model UserSprintProgress {
+  id          String   @id @default(uuid()) @db.Uuid
+  userId      String   @map("user_id") @db.Uuid
+  challengeId String   @map("challenge_id") @db.Uuid
+  progress    Int      @default(0) // 현재 달성 수량
+  startedAt   DateTime @default(now()) @map("started_at")
+  completedAt DateTime? @map("completed_at")
+
+  challenge SprintChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+  @@index([userId])
+  @@map("user_sprint_progress")
+}
+
+/// 스트릭(연속 완주 기록) — 유저당 1행
+model UserStreak {
+  userId            String   @id @map("user_id") @db.Uuid
+  currentStreak     Int      @default(0) @map("current_streak")
+  longestStreak     Int      @default(0) @map("longest_streak")
+  lastCompletedDate DateTime? @map("last_completed_date") @db.Date
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("user_streaks")
+}
+
+/// Web Push 구독 정보
+model PushSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  endpoint  String   @unique
+  p256dh    String // keys.p256dh
+  auth      String // keys.auth
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@map("push_subscriptions")
+}

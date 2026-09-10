@@ -29,11 +29,36 @@ npm run dev
 
 http://localhost:3000 접속.
 
+## Supabase 연동 (사용자가 직접)
+
+1. [supabase.com](https://supabase.com)에서 새 프로젝트 생성
+2. `cp .env.local.example .env.local` 후 값 채우기
+   - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`: Project Settings → API
+   - `DATABASE_URL`(포트 6543, pgbouncer), `DIRECT_URL`(포트 5432): Project Settings → Database → Connection string
+3. 스키마 반영:
+   ```bash
+   npm run db:generate   # Prisma Client 생성
+   npm run db:migrate     # 첫 마이그레이션 (dev)
+   npm run db:seed        # 스프린트 챌린지 시드
+   ```
+4. (권장) 각 테이블에 RLS 정책 추가 — `user_id = auth.uid()` 기준
+
+### DB 스크립트
+
+| 스크립트 | 설명 |
+|---|---|
+| `npm run db:generate` | Prisma Client 재생성 |
+| `npm run db:migrate` | 마이그레이션 생성·적용 (개발) |
+| `npm run db:deploy` | 마이그레이션 적용 (배포) |
+| `npm run db:push` | 마이그레이션 없이 스키마 강제 반영 (프로토타이핑) |
+| `npm run db:studio` | Prisma Studio |
+| `npm run db:seed` | 시드 실행 |
+
 ## 진행 상황
 
 - [x] 1. Next.js 스캐폴딩 (TS + Tailwind + App Router)
-- [ ] 2. Supabase 프로젝트 + `.env.local`
-- [ ] 3. Prisma 스키마 + 마이그레이션
+- [~] 2. Supabase 클라이언트 코드 (`src/lib/supabase/*`, `src/proxy.ts`) — 실제 프로젝트 값 입력은 사용자 몫
+- [~] 3. Prisma 스키마 작성 완료 — 마이그레이션은 DB 연결 후
 - [ ] 4. 인증
 - [ ] 5. 문제은행 CRUD + 시드
 - [ ] 6. SRS 복습 + 퀴즈 엔진
