@@ -2,7 +2,9 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
+import { getOverviewStats } from "@/lib/stats";
 import { SignOutButton } from "@/components/sign-out-button";
+import { ProgressDashboard } from "@/components/progress-dashboard";
 
 export const metadata: Metadata = { title: "대시보드 · 작심삼토" };
 
@@ -12,6 +14,7 @@ export default async function DashboardPage({
   const user = await requireUser();
   const admin = await isAdmin();
   const { error } = await searchParams;
+  const stats = await getOverviewStats(user.id);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-10">
@@ -76,6 +79,23 @@ export default async function DashboardPage({
           </p>
         </Link>
       </div>
+
+      {stats.totalAttempts === 0 ? (
+        <section className="rounded-2xl border border-dashed border-zinc-300 bg-white p-8 text-center dark:border-zinc-700 dark:bg-zinc-950">
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">
+            아직 푼 문제가 없어요. 연습이나 복습을 시작하면 여기에 진행도가
+            쌓여요.
+          </p>
+          <Link
+            href="/practice"
+            className="mt-4 inline-flex h-10 items-center rounded-xl bg-indigo-600 px-4 text-sm font-semibold text-white hover:bg-indigo-500"
+          >
+            첫 문제 풀러 가기
+          </Link>
+        </section>
+      ) : (
+        <ProgressDashboard stats={stats} />
+      )}
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
