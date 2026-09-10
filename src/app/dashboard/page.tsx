@@ -41,6 +41,31 @@ export default async function DashboardPage({
         </p>
       )}
 
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link
+          href="/study"
+          className="rounded-2xl border border-zinc-200 bg-white p-5 transition-colors hover:border-indigo-400 dark:border-zinc-800 dark:bg-zinc-950"
+        >
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            오늘의 복습 →
+          </h2>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            간격 반복으로 예정된 문제 풀기
+          </p>
+        </Link>
+        <Link
+          href="/practice"
+          className="rounded-2xl border border-zinc-200 bg-white p-5 transition-colors hover:border-indigo-400 dark:border-zinc-800 dark:bg-zinc-950"
+        >
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            연습 모드 →
+          </h2>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            파트별로 골라서 문제 풀기
+          </p>
+        </Link>
+      </div>
+
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
           이번 3일 스프린트
