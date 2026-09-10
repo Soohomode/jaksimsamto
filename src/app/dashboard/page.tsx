@@ -3,8 +3,11 @@ import type { Metadata } from "next";
 import { requireUser } from "@/lib/auth";
 import { isAdmin } from "@/lib/admin";
 import { getOverviewStats } from "@/lib/stats";
+import { getSprintView } from "@/lib/sprint";
+import { getStreak } from "@/lib/streak";
 import { SignOutButton } from "@/components/sign-out-button";
 import { ProgressDashboard } from "@/components/progress-dashboard";
+import { SprintPanel } from "@/components/sprint-panel";
 
 export const metadata: Metadata = { title: "대시보드 · 작심삼토" };
 
@@ -14,7 +17,11 @@ export default async function DashboardPage({
   const user = await requireUser();
   const admin = await isAdmin();
   const { error } = await searchParams;
-  const stats = await getOverviewStats(user.id);
+  const [stats, sprint, streak] = await Promise.all([
+    getOverviewStats(user.id),
+    getSprintView(user.id),
+    getStreak(user.id),
+  ]);
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-4 py-10">
@@ -26,6 +33,12 @@ export default async function DashboardPage({
           </h1>
         </div>
         <div className="flex items-center gap-3">
+          <Link
+            href="/challenge"
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            챌린지
+          </Link>
           {admin && (
             <Link
               href="/admin"
@@ -97,14 +110,12 @@ export default async function DashboardPage({
         <ProgressDashboard stats={stats} />
       )}
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
-          이번 3일 스프린트
-        </h2>
-        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-          챌린지 기능은 곧 여기에 붙어요. (개발 진행 순서 11단계)
-        </p>
-      </section>
+      <SprintPanel
+        current={sprint.current}
+        next={sprint.next}
+        streak={streak.current}
+        compact
+      />
     </div>
   );
 }

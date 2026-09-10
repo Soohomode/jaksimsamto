@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/auth";
 import { applyReview, gradeAndRecord, type GradeResult } from "@/lib/study";
 import { qualityFromCorrectness, GRADE_QUALITY } from "@/lib/srs";
 import type { ReviewGrade } from "@/lib/srs";
+import { touchStreak } from "@/lib/streak";
+import { advanceSprint } from "@/lib/sprint";
 
 export type SessionMode = "review" | "practice";
 
@@ -43,6 +45,9 @@ export async function submitAnswer(
     autoIntervalDays = next.intervalDays;
   }
 
+  await touchStreak(user.id);
+  await advanceSprint(user.id);
+
   return { ...result, autoIntervalDays };
 }
 
@@ -58,5 +63,7 @@ export async function rateCard(input: RateCardInput) {
     questionId: input.questionId,
     quality: GRADE_QUALITY[input.grade],
   });
+  await touchStreak(user.id);
+  await advanceSprint(user.id);
   return { intervalDays: next.intervalDays };
 }

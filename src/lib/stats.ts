@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getPartMeta } from "@/lib/parts";
+import { getStreak } from "@/lib/streak";
 import {
   kstDateKey,
   kstStartOfDaysAgo,
@@ -51,20 +52,6 @@ export interface OverviewStats {
   weakestPart?: PartAccuracy;
 }
 
-function computeStreak(activeDayKeys: Set<string>, now = new Date()): number {
-  let streak = 0;
-  // 오늘 활동이 없으면 어제부터 카운트 (오늘은 아직 안 한 것일 수 있음)
-  let cursor = new Date(now);
-  if (!activeDayKeys.has(kstDateKey(cursor))) {
-    cursor = new Date(cursor.getTime() - 24 * 60 * 60 * 1000);
-  }
-  while (activeDayKeys.has(kstDateKey(cursor))) {
-    streak++;
-    cursor = new Date(cursor.getTime() - 24 * 60 * 60 * 1000);
-  }
-  return streak;
-}
-
 export async function getOverviewStats(userId: string): Promise<OverviewStats> {
   const now = new Date();
   const since14 = kstStartOfDaysAgo(13, now);
@@ -80,7 +67,7 @@ export async function getOverviewStats(userId: string): Promise<OverviewStats> {
     trackedCards,
     perQuestion,
     mocks,
-    activityDays,
+    streakInfo,
   ] = await Promise.all([
     prisma.quizAttempt.count({ where: { userId } }),
     prisma.quizAttempt.count({ where: { userId, isCorrect: true } }),
@@ -109,10 +96,7 @@ export async function getOverviewStats(userId: string): Promise<OverviewStats> {
       orderBy: { takenAt: "asc" },
       take: 12,
     }),
-    prisma.quizAttempt.findMany({
-      where: { userId },
-      select: { attemptedAt: true },
-    }),
+    getStreak(userId),
   ]);
 
   // 최근 14일 활동
@@ -177,10 +161,6 @@ export async function getOverviewStats(userId: string): Promise<OverviewStats> {
     .filter((p) => p.attempts >= 3)
     .sort((a, b) => a.accuracy - b.accuracy)[0];
 
-  const activeDayKeys = new Set(
-    activityDays.map((a) => kstDateKey(a.attemptedAt)),
-  );
-
   return {
     totalAttempts,
     totalCorrect,
@@ -188,7 +168,7 @@ export async function getOverviewStats(userId: string): Promise<OverviewStats> {
     reviewedToday,
     dueToday,
     trackedCards,
-    streak: computeStreak(activeDayKeys, now),
+    streak: streakInfo.current,
     activity,
     byPart,
     mastery,
