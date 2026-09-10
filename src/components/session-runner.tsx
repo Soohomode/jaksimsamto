@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { getPartMeta, indexToChoiceKey } from "@/lib/parts";
 import { asChoices, type ClientQuestion } from "@/lib/question-shape";
 import { GRADE_LABEL, type ReviewGrade } from "@/lib/srs";
+import { AudioPlayer } from "@/components/audio-player";
 import {
   rateCard,
   submitAnswer,
@@ -150,11 +151,8 @@ export function SessionRunner({
         <p className="text-xs font-medium text-zinc-400">{meta?.label}</p>
 
         {q.audioScript && (
-          <div className="mt-3 rounded-lg bg-zinc-50 p-3 text-sm text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
-            <p className="mb-1 text-xs font-semibold text-zinc-400">
-              🔊 음성 스크립트 (TTS 재생은 8단계에서 연결)
-            </p>
-            <p className="whitespace-pre-line">{q.audioScript}</p>
+          <div className="mt-3">
+            <AudioPlayer key={q.id} script={q.audioScript} part={q.part} />
           </div>
         )}
 
