@@ -67,6 +67,29 @@ http://localhost:3000 접속.
 | `npm run db:studio` | Prisma Studio |
 | `npm run db:seed` | 시드 실행 |
 
+## CI / 배포
+
+- **CI**: `.github/workflows/ci.yml` — push(main)·PR마다 `lint → build → tsc`.
+- **배포 (Vercel)**:
+  1. Vercel에 이 repo import (Framework: Next.js 자동 감지)
+  2. **Environment Variables**에 아래를 모두 등록:
+
+     | 변수 | 비고 |
+     |---|---|
+     | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase API |
+     | `SUPABASE_SERVICE_ROLE_KEY` | 서버 전용 |
+     | `DATABASE_URL` (pooler 6543) / `DIRECT_URL` (5432) | Prisma |
+     | `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` | Web Push |
+     | `ADMIN_EMAILS` | 관리자 이메일(쉼표 구분) |
+     | `CRON_SECRET` | Cron 인증 (Vercel Cron이 자동으로 Bearer 헤더에 사용) |
+
+  3. 첫 배포 후 마이그레이션 적용: 로컬에서 `DATABASE_URL`을 프로덕션 값으로 두고
+     `npm run db:deploy` (또는 CI/CD 단계에 추가). `npm run db:seed`로 챌린지·샘플 문제 시드.
+  4. Supabase Auth → Redirect URLs에 배포 도메인(`https://<앱>.vercel.app/**`) 추가.
+  5. `vercel.json`의 Cron(`/api/cron/streak-reminder`, 매시)이 자동 등록됨.
+
+> `build` 스크립트가 `prisma generate`를 먼저 실행하므로 Vercel 빌드에서 별도 설정 불필요.
+
 ## 진행 상황
 
 - [x] 1. Next.js 스캐폴딩 (TS + Tailwind + App Router)
@@ -80,6 +103,6 @@ http://localhost:3000 접속.
 - [x] 9. 진행도 대시보드 (정답률·활동·파트별·복습 숙련도·모의고사 추이)
 - [x] 10. 3일 스프린트 챌린지 (`/challenge`) + `user_streaks` 연속 기록
 - [x] 11. Web Push 알림 (Service Worker + VAPID, 스트릭 리마인더 크론)
-- [ ] 12. CI + Vercel 배포
+- [x] 12. GitHub Actions CI (`lint`/`build`/`tsc`) + Vercel 배포 설정(`vercel.json`, 문서)
 
 자세한 브리프는 [CLAUDE.md](./CLAUDE.md) 참고.
