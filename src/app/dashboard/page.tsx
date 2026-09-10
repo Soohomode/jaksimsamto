@@ -41,7 +41,7 @@ export default async function DashboardPage({
         </p>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <Link
           href="/study"
           className="rounded-2xl border border-zinc-200 bg-white p-5 transition-colors hover:border-indigo-400 dark:border-zinc-800 dark:bg-zinc-950"
@@ -62,6 +62,17 @@ export default async function DashboardPage({
           </h2>
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             파트별로 골라서 문제 풀기
+          </p>
+        </Link>
+        <Link
+          href="/mock"
+          className="rounded-2xl border border-zinc-200 bg-white p-5 transition-colors hover:border-indigo-400 dark:border-zinc-800 dark:bg-zinc-950"
+        >
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+            모의고사 →
+          </h2>
+          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            전체 시뮬레이션 + 예상 점수(추정)
           </p>
         </Link>
       </div>
