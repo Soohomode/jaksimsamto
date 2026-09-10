@@ -14,11 +14,44 @@ import {
   RATE_MIN,
   RATE_STEP,
   isSpeechSupported,
+  listEnglishVoices,
   parseScript,
   planVoices,
+  speakerPitch,
   type ScriptSegment,
 } from "@/lib/tts";
 import { getPartMeta } from "@/lib/parts";
+
+const VOICE_STORAGE_KEY = "jaksimsamto:tts-voice";
+
+function readVoicePref(): string {
+  try {
+    return localStorage.getItem(VOICE_STORAGE_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+/** localStorage에 저장되는 음성 선택. 같은 탭 갱신을 위해 storage 이벤트를 직접 발생시킨다. */
+function usePreferredVoice(): [string, (v: string) => void] {
+  const uri = useSyncExternalStore(
+    (cb) => {
+      window.addEventListener("storage", cb);
+      return () => window.removeEventListener("storage", cb);
+    },
+    readVoicePref,
+    () => "",
+  );
+  const setPref = useCallback((v: string) => {
+    try {
+      localStorage.setItem(VOICE_STORAGE_KEY, v);
+    } catch {
+      /* private mode 등 */
+    }
+    window.dispatchEvent(new Event("storage"));
+  }, []);
+  return [uri, setPref];
+}
 
 type PlayState = "idle" | "playing" | "paused";
 
@@ -75,6 +108,9 @@ export function AudioPlayer({
   const [rate, setRate] = useState(DEFAULT_RATE);
   const [activeIdx, setActiveIdx] = useState<number>(-1);
   const [showScript, setShowScript] = useState(false);
+  const [voiceURI, setVoiceURI] = usePreferredVoice();
+
+  const englishVoices = useMemo(() => listEnglishVoices(voices), [voices]);
 
   const cancelledRef = useRef(false);
   const keepAliveRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -116,7 +152,15 @@ export function AudioPlayer({
     cancelledRef.current = false;
     setState("playing");
 
-    const plan = planVoices(segments, voices);
+    const plan = planVoices(segments, voices, voiceURI || undefined);
+    // 여러 화자가 같은 음성을 쓰면 피치로 구분
+    const distinctVoices = new Set(
+      [...plan.bySpeaker.values()].map((v) => v?.voiceURI),
+    );
+    const sharedVoice = plan.bySpeaker.size > 1 && distinctVoices.size <= 1;
+    const speakerOrder = [
+      ...new Set(segments.map((s) => s.speaker).filter(Boolean)),
+    ] as string[];
 
     const speakFrom = (i: number) => {
       if (cancelledRef.current || i >= segments.length) {
@@ -138,6 +182,9 @@ export function AudioPlayer({
         u.voice = v;
         u.lang = v.lang;
       }
+      if (sharedVoice && seg.speaker) {
+        u.pitch = speakerPitch(seg.speaker, speakerOrder.indexOf(seg.speaker));
+      }
       u.onstart = () => setActiveIdx(i);
       u.onend = () => {
         if (!cancelledRef.current) speakFrom(i + 1);
@@ -157,7 +204,7 @@ export function AudioPlayer({
     }, 8000);
 
     speakFrom(0);
-  }, [segments, voices, rate]);
+  }, [segments, voices, rate, voiceURI]);
 
   const pause = useCallback(() => {
     if (!isSpeechSupported()) return;
@@ -236,6 +283,28 @@ export function AudioPlayer({
         </label>
       </div>
 
+      {englishVoices.length > 0 && (
+        <label className="mt-2 flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+          <span className="shrink-0">음성</span>
+          <select
+            value={voiceURI}
+            onChange={(e) => {
+              setVoiceURI(e.target.value);
+              hardStop();
+            }}
+            className="min-w-0 flex-1 rounded-lg border border-zinc-300 bg-white px-2 py-1 text-xs dark:border-zinc-700 dark:bg-zinc-950"
+          >
+            <option value="">자동 (추천 음성)</option>
+            {englishVoices.map((v) => (
+              <option key={v.voiceURI} value={v.voiceURI}>
+                {v.name} ({v.lang})
+                {v.localService === false ? " · 온라인" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
       <button
         type="button"
         onClick={() => setShowScript((s) => !s)}
@@ -273,8 +342,11 @@ export function AudioPlayer({
         </p>
       )}
       {meta?.section === "LC" && (
-        <p className="mt-1 text-[11px] text-zinc-400">
-          ※ 브라우저 내장 음성이라 실제 시험 성우와 발음·억양이 다릅니다.
+        <p className="mt-1 text-[11px] leading-4 text-zinc-400">
+          ※ 브라우저 내장 음성이라 실제 시험 성우와 다릅니다. 더 자연스러운 음성을
+          원하면 Chrome에서 열거나(온라인 Google 음성), Mac은 시스템 설정 → 손쉬운
+          사용 → 음성 콘텐츠에서 &apos;향상된/프리미엄&apos; 영어 음성을
+          내려받으세요.
         </p>
       )}
     </div>
