@@ -53,7 +53,8 @@ http://localhost:3000 접속.
    `NEXT_PUBLIC_VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` 채우기.
    `CRON_SECRET`도 아무 값이나 설정. `/challenge`에서 "알림 켜기"로 구독.
    스트릭 리마인더는 `GET /api/cron/streak-reminder` (헤더 `Authorization: Bearer $CRON_SECRET`),
-   Vercel Cron이 `vercel.json` 스케줄대로 매시 호출.
+   Vercel Cron이 `vercel.json` 스케줄대로 매일 1회(KST 19시) 호출
+   (Hobby 무료 플랜은 크론 1개당 하루 1회 제한이라 그에 맞춤).
    ※ iOS Safari는 홈 화면에 추가한 PWA 상태에서만 웹 푸시가 동작함.
 
 ### DB 스크립트
@@ -86,7 +87,7 @@ http://localhost:3000 접속.
   3. 첫 배포 후 마이그레이션 적용: 로컬에서 `DATABASE_URL`을 프로덕션 값으로 두고
      `npm run db:deploy` (또는 CI/CD 단계에 추가). `npm run db:seed`로 챌린지·샘플 문제 시드.
   4. Supabase Auth → Redirect URLs에 배포 도메인(`https://<앱>.vercel.app/**`) 추가.
-  5. `vercel.json`의 Cron(`/api/cron/streak-reminder`, 매시)이 자동 등록됨.
+  5. `vercel.json`의 Cron(`/api/cron/streak-reminder`, 매일 1회)이 자동 등록됨.
 
 > `build` 스크립트가 `prisma generate`를 먼저 실행하므로 Vercel 빌드에서 별도 설정 불필요.
 
